@@ -1,0 +1,78 @@
+# Use root/example as user/password credentials
+version: "3"
+# networks:
+#   mongonet:
+#     external: true
+services:
+  registry-discovery:
+    container_name: id-eureka
+    image: paymentchain/eurekaserver:0.0.1-SNAPSHOT
+    environment:
+      EUREKA_SERVER: "http://10.20.19.97:8761/eureka/"
+    ports:
+      - 8761:8761
+  configuration:
+    container_name: id-config
+    image: paymentchain/configserver:0.0.1-SNAPSHOT
+    volumes:
+      - /home/vagrant/config-server-repo:/tmp/config-server-repo
+    environment:
+      EUREKA_SERVER: "http://registry-discovery:8761/eureka"
+      LOCAL_REPO: "/tmp/config-server-repo"
+    depends_on:
+      - registry-discovery
+    ports:
+      - 8888:8888
+  administracion:
+    container_name: id_admin
+    image: paymentchain/adminserver:0.0.1-SNAPSHOT
+    environment:
+      EUREKA_SERVER: "http://registry-discovery:8761/eureka"
+    depends_on:
+      - registry-discovery
+    ports:
+      - 8762:8762
+  customer:
+    container_name: id-customer
+    image: paymentchain/customer:0.0.1-SNAPSHOT
+    environment:
+      EUREKA_SERVER: "http://registry-discovery:8761/eureka"
+      URL_PRODUCT: "http://BUSINESSDOMAIN-PRODUCT/product"
+      URL_TRANSACTIONS: "http://BUSINESSDOMAIN-TRANSACTIONS/transaction"
+      URLBDCUSTOMER: "10.20.19.96:5400"
+      BDCUSTOMER: "customers"
+      USERBDCUSTOMER: "postgres"
+      PASSBDCUSTOMER: "SQLserver2012"
+    depends_on:
+      - registry-discovery
+      - configuration
+    ports:
+      - 8080:8080
+  product:
+    container_name: id-product
+    image: paymentchain/product:0.0.1-SNAPSHOT
+    environment:
+      EUREKA_SERVER: "http://registry-discovery:8761/eureka"
+      URLBDCUSTOMER: "10.20.19.96:5400"
+      BDCUSTOMER: "products"
+      USERBDCUSTOMER: "postgres"
+      PASSBDCUSTOMER: "SQLserver2012"
+    depends_on:
+      - registry-discovery
+      - configuration
+    ports:
+      - 8082:8082
+  transactions:
+    container_name: id-transactions
+    image: paymentchain/transactions:0.0.1-SNAPSHOT
+    environment:
+      EUREKA_SERVER: "http://registry-discovery:8761/eureka"
+      URLBDCUSTOMER: "10.20.19.96:5400"
+      BDCUSTOMER: "transactions"
+      USERBDCUSTOMER: "postgres"
+      PASSBDCUSTOMER: "SQLserver2012"
+    depends_on:
+      - registry-discovery
+      - configuration
+    ports:
+      - 8083:8083
